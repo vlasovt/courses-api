@@ -1,11 +1,10 @@
-﻿using System;
+﻿using CourseLibrary.API.Models;
+using CourseLibrary.API.ValidationAttributes;
 
 namespace CourseLibrary.API.Model
 {
-    public class CreateCourseDto
+    [CourseTitleMustBeDifferentFromDescription]
+    public class CreateCourseDto: CourseManipulationDto
     {
-        public string Title { get; set; }
-
-        public string Description { get; set; }
     }
 }
