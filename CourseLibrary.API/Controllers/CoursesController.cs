@@ -16,14 +16,14 @@ namespace CourseLibrary.API.Controllers
 {
     [ApiController]
     [Route("api/authors/{authorId}/courses")]
-    public class CoursesController: ControllerBase
+    public class CoursesController : ControllerBase
     {
         private ICourseLibraryRepository _courseRepository;
         private readonly IMapper _mapper;
 
         public CoursesController(ICourseLibraryRepository repository, IMapper mapper)
         {
-            _courseRepository = repository 
+            _courseRepository = repository
                 ?? throw new ArgumentNullException(nameof(repository));
             _mapper = mapper
                 ?? throw new ArgumentNullException(nameof(mapper));
@@ -32,7 +32,7 @@ namespace CourseLibrary.API.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<CourseDto>> GetCoursesForAuthor(Guid authorId)
         {
-            if(!_courseRepository.AuthorExists(authorId))
+            if (!_courseRepository.AuthorExists(authorId))
             {
                 return NotFound();
             }
@@ -41,7 +41,7 @@ namespace CourseLibrary.API.Controllers
             return Ok(_mapper.Map<IEnumerable<CourseDto>>(courses));
         }
 
-        [HttpGet("{courseId}", Name ="GetCoursesForAuthor")]
+        [HttpGet("{courseId}", Name = "GetCoursesForAuthor")]
         public IActionResult GetCourses(Guid authorId, Guid courseId)
         {
             if (!_courseRepository.AuthorExists(authorId))
@@ -130,7 +130,7 @@ namespace CourseLibrary.API.Controllers
             if (courseForAuthorFromRepo == null)
             {
                 var courseDto = new CourseUpdateDto();
-                patchDocument.ApplyTo(courseDto);
+                patchDocument.ApplyTo(courseDto, ModelState);
 
                 if (!TryValidateModel(courseDto))
                 {
@@ -152,7 +152,7 @@ namespace CourseLibrary.API.Controllers
 
             var courseToPatch = _mapper.Map<CourseUpdateDto>(courseForAuthorFromRepo);
             // add validation
-            patchDocument.ApplyTo(courseToPatch);
+            patchDocument.ApplyTo(courseToPatch, ModelState);
 
             if (!TryValidateModel(courseToPatch))
             {
@@ -174,6 +174,26 @@ namespace CourseLibrary.API.Controllers
             var options = HttpContext.RequestServices
                 .GetRequiredService<IOptions<ApiBehaviorOptions>>();
             return (ActionResult)options.Value.InvalidModelStateResponseFactory(ControllerContext);
+        }
+
+        [HttpDelete("{courseId}")]
+        public ActionResult DeleteCourse(Guid authorId, Guid courseId)
+        {
+            if (!_courseRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var courseForAuthorFromRepo = _courseRepository.GetCourse(authorId, courseId);
+
+            if (courseForAuthorFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            _courseRepository.DeleteCourse(courseForAuthorFromRepo);
+            _courseRepository.Save();
+            return NoContent();
         }
     }
 }
